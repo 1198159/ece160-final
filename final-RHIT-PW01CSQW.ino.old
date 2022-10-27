@@ -1,0 +1,161 @@
+//
+//#include "SimpleRSLK.h"
+//#include "Servo.h"
+//#include "ROMI_MOTOR_POWER.h"
+//#include "arduino-timer.h"
+//#include "PS2X_lib.h"
+//#include "LineSensor.h"
+//#include "Motor.h"
+//#define sgn(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
+//
+////auto timer = timer_create_default();
+///*
+//   15 brown
+//   14 orange
+//   34 blue
+//   35 yellow
+//*/
+////This is another test to see if onedrive is doing good
+//
+//PS2X controller; 
+//Servo gripper;
+//Motor leftMotor, rightMotor;
+//LineSensor sensor;
+//
+//void setup() {
+//  Serial1.begin(57600);
+//  Serial.begin(9600);
+//
+//  delayMicroseconds(2000000);
+//  //
+//  handleError(controller.config_gamepad(34, 14, 35, 15, true, true));
+//  setupRSLK();
+//  gripper.attach(SRV_0); //This is pin 38, from RSLK_Pins.h
+//  leftMotor.asLeft();
+//  rightMotor.asRight();
+//  
+//  sensor.start();
+//
+//  delayMicroseconds(2000000);
+//  //  tankDrive(0, 0);
+//  openClaw();
+//  delayMicroseconds(500000);
+//  //  tankDrive(30, -30);
+//  //  delayMicroseconds(500000);
+//  //  tankDrive(0, 0);
+//  //  closeClaw();
+//
+//}
+//enum class State {
+//  CONTROLLER, SERIAL, AUTO_DROP, CALIBRATE
+//};
+//
+//State state = State::CONTROLLER;
+//void pickState() {
+//  controller.read_gamepad();
+//  if (Serial1.available()) state = State::SERIAL;
+//  else if (controller.ButtonPressed(PSB_START)) state = State::CONTROLLER;
+//  else if (controller.ButtonPressed(PSB_SQUARE)) state = State::CALIBRATE;
+//  else if (controller.ButtonPressed(PSB_TRIANGLE)) state = State::AUTO_DROP;
+//}
+//void loop() {
+//  rightMotor.update();
+//  leftMotor.update();
+//  Serial1.println(leftMotor.getEncoderValue());
+//  pickState();
+//  switch (state) {
+//    case State::SERIAL:
+//      {
+//        if (!Serial1.available()) break;
+//        char i = Serial1.read();
+//
+//        if (i == 'z') openClaw();
+//        if (i == 'x') closeClaw();
+//        double fb = 0, lr = 0;
+//        if (i == 'w' || i == 'e' || i == 'q') fb -= 0.3;
+//        if (i == 's') fb += 0.3;
+//        if (i == 'a' || i == 'q') lr -= 0.15;
+//        if (i == 'd' || i == 'e') lr += 0.15;
+//        arcadeDrive(lr, fb);
+//      }
+//      break;
+//
+//    case State::CONTROLLER:
+//      {
+//        tankDrive(-scaleStick(controller.Analog(PSS_RY)), scaleStick(controller.Analog(PSS_LY)));
+//        //  arcadeDrive(scaleStick(controller.Analog(PSS_LY)), scaleStick(controller.Analog(PSS_RX)));
+//        if (controller.ButtonPressed(PSB_CIRCLE)) openClaw();
+//        if (controller.ButtonPressed(PSB_CROSS)) closeClaw();
+//      }
+//      break;
+//    case State::CALIBRATE:
+//      sensor.calibrate();
+//      Serial1.println("calibrating");
+//      break;
+//    case State::AUTO_DROP:
+//      
+//      break;
+//  }
+//
+//}
+//const double kStatic = 0.05;
+//double scaleStick(double value) {
+//  double s = map(value, 0, 255, -100, 100) / 100.0;
+//  s = s * s * s;
+//  return (s + sgn(s) * kStatic) * (1 - kStatic);
+//  //  return map(value, 0, 255, -100, 100);
+//}
+//
+//void openClaw() {
+//  Serial1.println("opening claw");
+//  gripper.write(15);
+//}
+//void closeClaw() {
+//
+//  Serial1.println("closing claw");
+//  gripper.write(80);
+//  //  delayMicroseconds(1000000000);
+//}
+//void arcadeDrive(int x, int y) {
+//  tankDrive(-y - 2 * x, y - 2 * x);
+//}
+//void tankDrive(double lp, double rp) {
+////  if (lp > 0 && rp > 0) {
+////    Serial1.println("spin left");
+////  } else  if (lp < 0 && rp < 0) {
+////    Serial1.println("spin right");
+////  } else if (lp > 0 && rp < 0) {
+////    Serial1.println("drive forward");
+////  } else if (lp < 0 && rp > 0) {
+////    Serial1.println("drive backward");
+////  } else if ((lp == 0 && rp > 0) || (rp == 0 && lp > 0)) {
+////    Serial1.println("spin left drive");
+////  } else if ((lp == 0 && rp < 0) || (rp == 0 && lp < 0)) {
+////    Serial1.println("spin right drive");
+////  } else Serial1.println("stop");
+//  
+//  setLeftPower(lp);
+//  setRightPower(rp);
+//}
+//void setLeftPower(double power) {
+//  leftMotor.setVelocity(-power);
+//}
+//
+//void setRightPower(double power) {
+//    rightMotor.setVelocity(power);
+//}
+//void handleError(int error) {
+//  if (error == 0) {
+//    Serial1.println("Found Controller, configured successful");
+//    Serial1.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
+//    Serial1.println("holding L1 or R1 will print out the analog stick values.");
+//    Serial1.println("Go to www.billporter.info for updates and to report bugs.");
+//  }
+//  else if (error == 1)
+//    Serial1.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+//  else if (error == 2)
+//    Serial1.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+//  else if (error == 3)
+//    Serial1.println("Controller refusing to enter Pressures mode, may not support it. ");
+//  else Serial1.println("idfk man");
+//}
