@@ -28,8 +28,9 @@ IRsend sendIR; //Object that is required to transmit (Tx)
 
 
 double setPoint, input, output;
-const double P = 0.1, I = 0, D = 0.012;
-PID follower(&input, &output, &setPoint, P,I,D, DIRECT);
+//p.08 d.005
+const double P = 0.12, I = 0, D = 0.018;
+PID follower(&input, &output, &setPoint, P, I, D, DIRECT);
 
 //setup function
 double lineVal;
@@ -47,10 +48,10 @@ void setup() {
   Serial.begin(9600);
 
   delayMicroseconds(2000000);
- 
 
-  pinMode(lightSensor,INPUT);
-  pinMode(lightLedPin,OUTPUT);
+
+  pinMode(lightSensor, INPUT);
+  pinMode(lightLedPin, OUTPUT);
 
   handleError(controller.config_gamepad(BLUE, ORANGE, YELLOW, BROWN, true, true));
   setupRSLK();
@@ -68,7 +69,7 @@ void setup() {
 }
 //states the robot can be in
 enum class State {
-  CONTROLLER, SERIAL, LINE_FOLLOW, CALIBRATE, SEND_IR 
+  CONTROLLER, SERIAL, LINE_FOLLOW, CALIBRATE, SEND_IR
 };
 //current state
 State state = State::CONTROLLER;
@@ -78,16 +79,16 @@ void pickState() {
   else if (controller.ButtonPressed(PSB_START)) state = State::CONTROLLER;
   else if (controller.ButtonPressed(PSB_SQUARE)) state = State::CALIBRATE;
   else if (controller.ButtonPressed(PSB_TRIANGLE)) state = State::LINE_FOLLOW;
-  else if(controller.ButtonPressed(PSB_SELECT)) state = State::SEND_IR;
+  else if (controller.ButtonPressed(PSB_SELECT)) state = State::SEND_IR;
 }
-void p(double val){
+void p(double val) {
   Serial1.print(val);
 }
 //main loop function with state machine
 void loop() {
   readLights();
-//  leftMotor.update(NULL);
-//  rightMotor.update(&p);
+  //  leftMotor.update(NULL);
+  //  rightMotor.update(&p);
   Serial1.println();
   pickState();
   switch (state) {
@@ -108,7 +109,7 @@ void loop() {
       break;
     case State::CALIBRATE:
       sensor.calibrate();
-      calLight = (analogRead(lightSensor)- lightTolerance);//Also calibrating the light in the room for the ledlight 
+      calLight = (analogRead(lightSensor) - lightTolerance); //Also calibrating the light in the room for the ledlight
       Serial1.println("calibrating");
       break;
     case State::CONTROLLER:
@@ -131,61 +132,68 @@ void loop() {
       delay(100);
 
       sendIRSignal(160, 143);
-delay(100);
+      delay(100);
       break;
   }
-    delayMicroseconds(10000);
+  delayMicroseconds(10000);
 
 }
-void sendIRSignal(int address, int command){
-    IRData IRmsg; //Same object required for both Tx and Rx
-   sendIR.begin(irLedPin, true, GREEN_LED);
-     IRmsg.protocol = NEC; //use this protocol
-     IRmsg.address = address; //Tx address (can be in decimal)
-      IRmsg.command = command; //Tx command (can be in decimal)
-       IRmsg.isRepeat = false; //Sends REPEAT instead of original command (don’t use)
-      sendIR.write(&IRmsg); //Sends the data through the IR LED connected to IR_TRX_PIN
+void sendIRSignal(int address, int command) {
+  IRData IRmsg; //Same object required for both Tx and Rx
+  sendIR.begin(irLedPin, true, GREEN_LED);
+  IRmsg.protocol = NEC; //use this protocol
+  IRmsg.address = address; //Tx address (can be in decimal)
+  IRmsg.command = command; //Tx command (can be in decimal)
+  IRmsg.isRepeat = false; //Sends REPEAT instead of original command (don’t use)
+  sendIR.write(&IRmsg); //Sends the data through the IR LED connected to IR_TRX_PIN
 }
 
 //const double LINE_DEADZONE = 0.15;
 //function for line following
 
 int accum = 0;
-boolean readLights(){
+boolean readLights() {
   lightLevel = analogRead(lightSensor);
   Serial1.print("The light level is: ");
   Serial1.print(lightLevel);
-  if(lightLevel<calLight){
+  if (lightLevel < calLight) {
     digitalWrite(lightLedPin, HIGH);
-    if(accum == 100){
+    if (accum == 100) {
       digitalWrite(SPECIAL_LED, LOW);
       accum = 0;
-    }else{
-      if(accum == 50) digitalWrite(SPECIAL_LED, HIGH);
+    } else {
+      if (accum == 50) digitalWrite(SPECIAL_LED, HIGH);
       accum++;
     }
-    }
-    else{
-      digitalWrite(SPECIAL_LED, LOW);
-      digitalWrite(lightLedPin,LOW);
-    }
-    return lightLevel < calLight;
-  
   }
+  else {
+    digitalWrite(SPECIAL_LED, LOW);
+    digitalWrite(lightLedPin, LOW);
+  }
+  return lightLevel < calLight;
+
+}
+double lastInput = 0;
 void lineFollow() {
   input = sensor.getValue();
   follower.Compute();
   Serial1.println(input);
+  if (input > -0.99) lastInput = input;
   if (input < -0.99) {
-    if(!readLights()){
-          
-    openClaw();
-    state = State::CONTROLLER;
-    arcadeDrive(0,0);
-    } else arcadeDrive (0.1, 0);
+    //    if(!readLights()){
+    if (lastInput > 0.1) arcadeDrive(0.2, 0);
+    else if (lastInput < -0.1) arcadeDrive(-0.2, 0);
+    else {
+      openClaw();
+      state = State::CONTROLLER;
+      arcadeDrive(0, 0);
+
+    }
+
+    //    } else arcadeDrive (0.1, 0);
 
     return;
-  } 
+  }
   Serial1.print(output);
   Serial1.print("    ");
   arcadeDrive(-output, 0.3);
@@ -236,12 +244,12 @@ void tankDrive(double lp, double rp) {
   setRightPower(rp);
 }
 void setLeftPower(double power) {
-//  leftMotor.setVelocity(-power);
+  //  leftMotor.setVelocity(-power);
   leftMotor.setPower(-power);
 }
 
 void setRightPower(double power) {
-//  rightMotor.setVelocity(power);
+  //  rightMotor.setVelocity(power);
   rightMotor.setPower(power);
 }
 //handle controller error
