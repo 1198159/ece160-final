@@ -18,7 +18,7 @@ public:
 	void setEnabled(bool enable);
 	void setPower(double power);
   void setVelocity(double power);
-	void update();
+	void update(void (*func)(double));
   void asLeft();
   void asRight();
   uint32_t getEncoderValue();

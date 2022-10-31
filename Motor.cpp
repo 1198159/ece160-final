@@ -9,7 +9,7 @@ uint8_t left_wheel_dir = 0;
 uint8_t right_wheel_dir = 0;
 
 //PID terms for the velocity PID;
-const int P = 1, I = 0, D = 0;
+const double P = 1, I = 0, D = 0;
 
 //create motor
 Motor::Motor(){}
@@ -28,7 +28,7 @@ void Motor::start(int s, int d, int p, int a, int b, uint32_t* count, uint8_t* d
   setPoint = 0;
 
   pidController->SetMode(AUTOMATIC);
-
+  pidController->SetOutputLimits(-100, 100);
   pinMode(slpPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(pwmPin, OUTPUT);
@@ -68,16 +68,23 @@ void Motor::asRight(){
 //pid stuff
 double pastTime, currTime;
 uint32_t pastEncoder, currEncoder;
-void Motor::update(){
+//Serial1.begin(57600);
+void Motor::update(void (*func)(double)){
   pastTime = currTime;
-  currTime = micros()/1000000;
-  double deltaTime = currTime-pastTime;
+  currTime = micros()/1000000.0;
+  double deltaTime = 1;// currTime-pastTime;
   pastEncoder = currEncoder;
   currEncoder = getEncoderValue();
-  double deltaEncoder = currEncoder-pastEncoder;
-  input = deltaEncoder/deltaTime/100;
+  double deltaEncoder = 1;// currEncoder-pastEncoder;
+  if(deltaTime != 0) input = deltaEncoder/deltaTime;
   pidController->Compute();
-  setPower(output);
+  if(func != NULL){
+    func(deltaTime);
+    func(deltaEncoder);
+    func(input);
+    func(output);
+  }
+//  setPower(output);
   
 }
 //get encoder value

@@ -34,10 +34,13 @@ PID follower(&input, &output, &setPoint, P,I,D, DIRECT);
 //setup function
 double lineVal;
 const int irLedPin = 37;
+const int irReadPin = A12;
 const int lightLedPin = 17;
 const int lightSensor = A9;
 int lightLevel;
 int calLight = 450;
+
+const int SPECIAL_LED = 19;
 const int lightTolerance = 100;
 void setup() {
   Serial1.begin(57600);
@@ -77,10 +80,15 @@ void pickState() {
   else if (controller.ButtonPressed(PSB_TRIANGLE)) state = State::LINE_FOLLOW;
   else if(controller.ButtonPressed(PSB_SELECT)) state = State::SEND_IR;
 }
-
+void p(double val){
+  Serial1.print(val);
+}
 //main loop function with state machine
 void loop() {
   readLights();
+//  leftMotor.update(NULL);
+//  rightMotor.update(&p);
+  Serial1.println();
   pickState();
   switch (state) {
     case State::SERIAL:
@@ -126,6 +134,8 @@ void loop() {
 delay(100);
       break;
   }
+    delayMicroseconds(10000);
+
 }
 void sendIRSignal(int address, int command){
     IRData IRmsg; //Same object required for both Tx and Rx
@@ -140,12 +150,26 @@ void sendIRSignal(int address, int command){
 //const double LINE_DEADZONE = 0.15;
 //function for line following
 
+int accum = 0;
 boolean readLights(){
   lightLevel = analogRead(lightSensor);
   Serial1.print("The light level is: ");
-  Serial1.println(lightLevel);
-    digitalWrite(lightLedPin, lightLevel<calLight);
-    return lightLevel<calLight;
+  Serial1.print(lightLevel);
+  if(lightLevel<calLight){
+    digitalWrite(lightLedPin, HIGH);
+    if(accum == 100){
+      digitalWrite(SPECIAL_LED, LOW);
+      accum = 0;
+    }else{
+      if(accum == 50) digitalWrite(SPECIAL_LED, HIGH);
+      accum++;
+    }
+    }
+    else{
+      digitalWrite(SPECIAL_LED, LOW);
+      digitalWrite(lightLedPin,LOW);
+    }
+    return lightLevel < calLight;
   
   }
 void lineFollow() {
@@ -212,10 +236,12 @@ void tankDrive(double lp, double rp) {
   setRightPower(rp);
 }
 void setLeftPower(double power) {
+//  leftMotor.setVelocity(-power);
   leftMotor.setPower(-power);
 }
 
 void setRightPower(double power) {
+//  rightMotor.setVelocity(power);
   rightMotor.setPower(power);
 }
 //handle controller error
