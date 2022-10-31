@@ -25,16 +25,15 @@ Motor leftMotor, rightMotor;
 //linesensor object
 LineSensor sensor;
 IRsend sendIR; //Object that is required to transmit (Tx)
-IRData IRmsg; //Same object required for both Tx and Rx
 
 
 double setPoint, input, output;
-const int P = 1, I = 0, D = 0;
+const double P = 0.1, I = 0, D = 0.012;
 PID follower(&input, &output, &setPoint, P,I,D, DIRECT);
 
 //setup function
 double lineVal;
-const int irLedPin = 32;
+const int irLedPin = 37;
 const int lightLedPin = 17;
 const int lightSensor = A9;
 int lightLevel;
@@ -58,6 +57,7 @@ void setup() {
 
   sensor.calibrate();
   follower.SetMode(AUTOMATIC);
+  follower.SetOutputLimits(-100, 100);
   setPoint = 0;
 
   openClaw();
@@ -116,43 +116,55 @@ void loop() {
       lineFollow();
       break;
     case State::SEND_IR:
-     sendIR.begin(irLedPin, true, GREEN_LED);
-     IRmsg.protocol = NEC; //use this protocol
-     IRmsg.address = 0xA5; //Tx address (can be in decimal)
-      IRmsg.command = 0xC3; //Tx command (can be in decimal)
-       IRmsg.isRepeat = false; //Sends REPEAT instead of original command (don’t use)
-      sendIR.write(&IRmsg); //Sends the data through the IR LED connected to IR_TRX_PIN
+      sendIRSignal(0xA5, 0xC3);
+      delay(100);
+
+      sendIRSignal(160, 123);
+      delay(100);
+
+      sendIRSignal(160, 143);
+delay(100);
       break;
   }
+}
+void sendIRSignal(int address, int command){
+    IRData IRmsg; //Same object required for both Tx and Rx
+   sendIR.begin(irLedPin, true, GREEN_LED);
+     IRmsg.protocol = NEC; //use this protocol
+     IRmsg.address = address; //Tx address (can be in decimal)
+      IRmsg.command = command; //Tx command (can be in decimal)
+       IRmsg.isRepeat = false; //Sends REPEAT instead of original command (don’t use)
+      sendIR.write(&IRmsg); //Sends the data through the IR LED connected to IR_TRX_PIN
 }
 
 //const double LINE_DEADZONE = 0.15;
 //function for line following
 
-void readLights(){
+boolean readLights(){
   lightLevel = analogRead(lightSensor);
   Serial1.print("The light level is: ");
   Serial1.println(lightLevel);
-  if(lightLevel<calLight){
-    digitalWrite(lightLedPin, HIGH);
-    }
-    else{
-      digitalWrite(lightLedPin,LOW);
-      }
+    digitalWrite(lightLedPin, lightLevel<calLight);
+    return lightLevel<calLight;
   
   }
 void lineFollow() {
-  setPoint = 0;
   input = sensor.getValue();
   follower.Compute();
   Serial1.println(input);
   if (input < -0.99) {
-    arcadeDrive (0, 0);
+    if(!readLights()){
+          
     openClaw();
     state = State::CONTROLLER;
+    arcadeDrive(0,0);
+    } else arcadeDrive (0.1, 0);
+
     return;
   } 
-  arcadeDrive(output, 0.4);
+  Serial1.print(output);
+  Serial1.print("    ");
+  arcadeDrive(-output, 0.3);
 
 }
 //scale the stick to make robot more drivable
