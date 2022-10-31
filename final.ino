@@ -5,6 +5,7 @@
 #include "PS2X_lib.h"
 #include "LineSensor.h"
 #include "Motor.h"
+#include "TinyIRremote.h"
 //get sign of a number
 ///git test
 #define sgn(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
@@ -21,14 +22,27 @@ Servo gripper;
 Motor leftMotor, rightMotor;
 //linesensor object
 LineSensor sensor;
+IRsend sendIR; //Object that is required to transmit (Tx)
+IRData IRmsg; //Same object required for both Tx and Rx
+
 
 //setup function
 double lineVal;
+const int irLedPin = 32;
+const int lightLedPin = 17;
+const int lightSensor = A9;
+int lightLevel;
+int calLight = 450;
+const int lightTolerance = 100;
 void setup() {
   Serial1.begin(57600);
   Serial.begin(9600);
 
   delayMicroseconds(2000000);
+ 
+
+  pinMode(lightSensor,INPUT);
+  pinMode(lightLedPin,OUTPUT);
 
   handleError(controller.config_gamepad(BLUE, ORANGE, YELLOW, BROWN, true, true));
   setupRSLK();
@@ -43,7 +57,7 @@ void setup() {
 }
 //states the robot can be in
 enum class State {
-  CONTROLLER, SERIAL, LINE_FOLLOW, CALIBRATE
+  CONTROLLER, SERIAL, LINE_FOLLOW, CALIBRATE, SEND_IR 
 };
 //current state
 State state = State::CONTROLLER;
@@ -53,10 +67,12 @@ void pickState() {
   else if (controller.ButtonPressed(PSB_START)) state = State::CONTROLLER;
   else if (controller.ButtonPressed(PSB_SQUARE)) state = State::CALIBRATE;
   else if (controller.ButtonPressed(PSB_TRIANGLE)) state = State::LINE_FOLLOW;
+  else if(controller.ButtonPressed(PSB_SELECT)) state = State::SEND_IR;
 }
 
 //main loop function with state machine
 void loop() {
+  readLights();
   pickState();
   switch (state) {
     case State::SERIAL:
@@ -76,6 +92,7 @@ void loop() {
       break;
     case State::CALIBRATE:
       sensor.calibrate();
+      calLight = (analogRead(lightSensor)- lightTolerance);//Also calibrating the light in the room for the ledlight 
       Serial1.println("calibrating");
       break;
     case State::CONTROLLER:
@@ -90,11 +107,32 @@ void loop() {
     case State::LINE_FOLLOW:
       lineFollow();
       break;
+    case State::SEND_IR:
+     sendIR.begin(irLedPin, true, GREEN_LED);
+     IRmsg.protocol = NEC; //use this protocol
+     IRmsg.address = 0xA5; //Tx address (can be in decimal)
+      IRmsg.command = 0xC3; //Tx command (can be in decimal)
+       IRmsg.isRepeat = false; //Sends REPEAT instead of original command (don’t use)
+      sendIR.write(&IRmsg); //Sends the data through the IR LED connected to IR_TRX_PIN
+      break;
   }
 }
 
 const double LINE_DEADZONE = 0.15;
 //function for line following
+
+void readLights(){
+  lightLevel = analogRead(lightSensor);
+  Serial1.print("The light level is: ");
+  Serial1.println(lightLevel);
+  if(lightLevel<calLight){
+    digitalWrite(lightLedPin, HIGH);
+    }
+    else{
+      digitalWrite(lightLedPin,LOW);
+      }
+  
+  }
 void lineFollow() {
 
   lineVal = sensor.getValue();
