@@ -6,6 +6,8 @@
 #include "LineSensor.h"
 #include "Motor.h"
 #include "TinyIRremote.h"
+#include "PID_v1.h"
+
 //get sign of a number
 ///git test
 #define sgn(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
@@ -25,6 +27,10 @@ LineSensor sensor;
 IRsend sendIR; //Object that is required to transmit (Tx)
 IRData IRmsg; //Same object required for both Tx and Rx
 
+
+double setPoint, input, output;
+const int P = 1, I = 0, D = 0;
+PID follower(&input, &output, &setPoint, P,I,D, DIRECT);
 
 //setup function
 double lineVal;
@@ -51,6 +57,8 @@ void setup() {
   rightMotor.asRight();
 
   sensor.calibrate();
+  follower.SetMode(AUTOMATIC);
+  setPoint = 0;
 
   openClaw();
 
@@ -118,7 +126,7 @@ void loop() {
   }
 }
 
-const double LINE_DEADZONE = 0.15;
+//const double LINE_DEADZONE = 0.15;
 //function for line following
 
 void readLights(){
@@ -134,17 +142,17 @@ void readLights(){
   
   }
 void lineFollow() {
-
-  lineVal = sensor.getValue();
-  Serial1.println(lineVal);
-  if (lineVal < -0.99) {
+  setPoint = 0;
+  input = sensor.getValue();
+  follower.Compute();
+  Serial1.println(input);
+  if (input < -0.99) {
     arcadeDrive (0, 0);
     openClaw();
     state = State::CONTROLLER;
     return;
-  }
-  if (lineVal > -LINE_DEADZONE && lineVal < 0.05) lineVal = 0;
-  arcadeDrive(lineVal*0.1, 0.4);
+  } 
+  arcadeDrive(output, 0.4);
 
 }
 //scale the stick to make robot more drivable
