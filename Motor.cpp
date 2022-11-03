@@ -32,8 +32,8 @@ void Motor::start(int s, int d, int p, int a, int b, uint32_t* count, uint8_t* d
   pinMode(slpPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(pwmPin, OUTPUT);
-  pinMode(aPin, INPUT_PULLDOWN);
-  pinMode(bPin, INPUT_PULLDOWN);
+//  pinMode(aPin, INPUT_PULLDOWN);
+//  pinMode(bPin, INPUT_PULLDOWN);
 
   setEnabled(true);
 
@@ -57,12 +57,12 @@ void triggerRight() {
 //make this motor left
 void Motor::asLeft(){
   start(MOTOR_L_SLP_PIN, MOTOR_L_DIR_PIN, MOTOR_L_PWM_PIN, ENCODER_ELA_PIN, ENCODER_ELB_PIN, &left_cnt, &left_wheel_dir);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_ELB_PIN),triggerLeft,RISING);  
+//  attachInterrupt(digitalPinToInterrupt(ENCODER_ELB_PIN),triggerLeft,RISING);  
 }
 //make this motor right
 void Motor::asRight(){
   start(MOTOR_R_SLP_PIN, MOTOR_R_DIR_PIN, MOTOR_R_PWM_PIN, ENCODER_ERA_PIN, ENCODER_ERB_PIN, &right_cnt, &right_wheel_dir);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_ERB_PIN),triggerRight,RISING);
+//  attachInterrupt(digitalPinToInterrupt(ENCODER_ERB_PIN),triggerRight,RISING);
 
 }
 //pid stuff
