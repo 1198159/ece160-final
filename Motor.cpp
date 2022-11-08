@@ -32,8 +32,8 @@ void Motor::start(int s, int d, int p, int a, int b, uint32_t* count, uint8_t* d
   pinMode(slpPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(pwmPin, OUTPUT);
-//  pinMode(aPin, INPUT_PULLDOWN);
-//  pinMode(bPin, INPUT_PULLDOWN);
+  pinMode(aPin, INPUT_PULLDOWN);
+  pinMode(bPin, INPUT_PULLDOWN);
 
   setEnabled(true);
 
@@ -57,18 +57,18 @@ void triggerRight() {
 //make this motor left
 void Motor::asLeft(){
   start(MOTOR_L_SLP_PIN, MOTOR_L_DIR_PIN, MOTOR_L_PWM_PIN, ENCODER_ELA_PIN, ENCODER_ELB_PIN, &left_cnt, &left_wheel_dir);
-//  attachInterrupt(digitalPinToInterrupt(ENCODER_ELB_PIN),triggerLeft,RISING);  
+  attachInterrupt(digitalPinToInterrupt(ENCODER_ELB_PIN),triggerLeft,RISING);  
 }
 //make this motor right
 void Motor::asRight(){
   start(MOTOR_R_SLP_PIN, MOTOR_R_DIR_PIN, MOTOR_R_PWM_PIN, ENCODER_ERA_PIN, ENCODER_ERB_PIN, &right_cnt, &right_wheel_dir);
-//  attachInterrupt(digitalPinToInterrupt(ENCODER_ERB_PIN),triggerRight,RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_ERB_PIN),triggerRight,RISING);
 
 }
 //pid stuff
 double pastTime, currTime;
 uint32_t pastEncoder, currEncoder;
-//Serial1.begin(57600);
+//function for doing velocity PID on the motors. This would not work because of limitations with how the encoder read values and the encoders did not handle direction changes well
 void Motor::update(void (*func)(double)){
   pastTime = currTime;
   currTime = micros()/1000000.0;
@@ -87,15 +87,16 @@ void Motor::update(void (*func)(double)){
 //  setPower(output);
   
 }
+
 //get encoder value
 uint32_t Motor::getEncoderValue(){
   return (*eCount)*(*eDir ? 1 : -1);
 }
-//enable or disable motor
+//enable or disable motor 
 void Motor::setEnabled(bool enable){
 	digitalWrite(slpPin, enable);
 }
-//set motor velocity
+//set motor velocity (doesn't work)
 void Motor::setVelocity(double power){
   setPoint = power;
 }

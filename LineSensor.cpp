@@ -10,7 +10,7 @@ void LineSensor::calibrate() {
   readLineSensor(sensorVals);
   setSensorMinMax(sensorVals, sensorMinVals, sensorMaxVals);
 }
-//get line sensor values
+//get line sensor value from -1000.0 to 1000.0
 double LineSensor::getValue() {
   readLineSensor(sensorVals);
   readCalLineSensor(sensorVals, calibVals, sensorMinVals, sensorMaxVals, lineMode);
