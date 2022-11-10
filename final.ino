@@ -51,6 +51,8 @@ double setPoint, input, output;
 const double P = 0.12, I = 0.0, D = 0.014, SPEED_UP = 0.5, MIN_SPEED = 0.3;
 //tolerance to detect if a line ends
 const double LINE_END_TOLERANCE = 0.2;
+//amount of driving forward to drop Rosie
+const int ROSIE_FORWARD_DISTANCE = 2;
 
 PID follower(&input, &output, &setPoint, P, I, D, DIRECT);
 
@@ -308,7 +310,7 @@ void scoreRosie(int ros) {
   lineFollowBlocking();
   delay(200);
   int trn = ros == 0 ? -40 : ros == 1 ? 40 : 0; 
-      drive(-2);
+      drive(-ROSIE_FORWARD_DISTANCE);
   if(ros < 2){
   turn(trn);
   drive(-2);
