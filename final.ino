@@ -49,6 +49,9 @@ IRsend sendIR; //Object that is required to transmit (Tx)
 double setPoint, input, output;
 //p.08 d.005
 const double P = 0.12, I = 0.0, D = 0.014, SPEED_UP = 0.5, MIN_SPEED = 0.3;
+//tolerance to detect if a line ends
+const double LINE_END_TOLERANCE = 0.2;
+
 PID follower(&input, &output, &setPoint, P, I, D, DIRECT);
 
 //LEDs for artistic effect in tunnel
@@ -376,8 +379,8 @@ void lineFollow() {
   if (input > -0.99) lastInput = input;
   if (input < -0.99) {
     //    if(!readLights()){
-    if (lastInput > 0.2) arcadeDrive(0.15, 0);
-    else if (lastInput < -0.2) arcadeDrive(-0.15, 0);
+    if (lastInput > LINE_END_TOLERANCE) arcadeDrive(0.15, 0);
+    else if (lastInput < -LINE_END_TOLERANCE) arcadeDrive(-0.15, 0);
     else arcadeDrive(0, 0);
     return;
   }
